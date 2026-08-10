@@ -1,0 +1,10 @@
+{
+  "description": "Interactive healthcare dashboard delivering real-time KPIs, data visualizations, and insights with responsive design for efficient medical data analysis.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

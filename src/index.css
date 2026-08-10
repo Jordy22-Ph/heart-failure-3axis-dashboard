@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono-data {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #DFE3E8; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #8B95A1; }
+
+/* Smooth transitions */
+.tab-active-indicator {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* Recharts tooltip */
+.recharts-tooltip-wrapper { outline: none !important; }
