@@ -752,7 +752,7 @@ function DataTab() {
       {/* Priority checks + integrity note */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-5">
-          <SectionLabel>본선 우선 확인 5가지</SectionLabel>
+          <SectionLabel>{`본선 우선 확인 ${PRIORITY_CHECKS.length}가지`}</SectionLabel>
           <div className="font-semibold mb-3" style={{ color: C.ink }}>안심존 반입 직후 점검 순서</div>
           <ol className="space-y-2">
             {PRIORITY_CHECKS.map((c, i) => (

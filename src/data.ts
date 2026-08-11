@@ -270,17 +270,22 @@ export interface ErdEntity {
 
 export const ERD_ENTITIES: ErdEntity[] = [
   { name: 'PERSON', fields: ['person_id (PK)', '성별·출생연도'], core: true },
+  { name: 'OBSERVATION_PERIOD', fields: ['person_id (FK)', '관찰 시작·종료일'], core: true },
   { name: 'VISIT_OCCURRENCE', fields: ['person_id (FK)', '입·퇴원일 · 방문 유형'], core: true },
   { name: 'CONDITION_OCCURRENCE', fields: ['person_id (FK)', 'condition_concept_id'], core: true },
+  { name: 'CONDITION_ERA', fields: ['person_id', '진단 연속구간 집계'], core: true },
+  { name: 'PROCEDURE_OCCURRENCE', fields: ['person_id (FK)', 'procedure_concept_id'], core: true },
   { name: 'MEASUREMENT', fields: ['person_id (FK)', 'value_as_number · 단위'], core: true },
+  { name: 'OBSERVATION', fields: ['person_id (FK)', '도메인 제약 없음 — EF·NYHA 후보'], core: true },
   { name: 'DRUG_EXPOSURE', fields: ['person_id (FK)', 'drug_concept_id'], core: true },
   { name: 'DRUG_ERA', fields: ['person_id (FK)', 'gap_days'], core: true },
   { name: 'CONCEPT / ANCESTOR', fields: ['개념 매핑 · 계층 확장'], core: true },
-  { name: 'OBSERVATION · DEATH', fields: ['EF·NYHA / 사망정보', '본선 재확인 대상'], core: false },
+  { name: 'DEATH', fields: ['현재 18개 제공 테이블 목록에 없음', '본선 데이터 제공 시 확인'], core: false },
 ];
 
 export const PRIORITY_CHECKS = [
   'death 테이블의 존재·내용',
+  '원천 코드 매핑 실패율(concept_id=0) — 샘플 전반에서 반복 확인됨',
   'BNP·알부민·Na·Cr 실측값과 반복측정',
   'EF의 저장 위치·형식',
   'drug_era.GAP_DAYS 중간값과 이상치',
