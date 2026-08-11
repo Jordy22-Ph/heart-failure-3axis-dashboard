@@ -1,4 +1,4 @@
-export type Tab = 'overview' | 'data' | 'matrix' | 'patients' | 'model' | 'submission';
+export type Tab = 'overview' | 'data' | 'matrix' | 'patients' | 'model';
 export type GapType = '영양' | '관리' | '영양+관리' | '교정 여지 작음' | '공백 없음';
 export type StatusType = '위험' | '경계' | '안정';
 export type Period = '30일' | '90일' | '전체';
@@ -310,16 +310,3 @@ export const ANALYSIS_ROUTES: { full: RouteItem[]; partial: RouteItem[]; base: R
     { id: 'C2', title: '재입원 단독 1차 결과', desc: 'death 없으면 재입원율로 수렴', tag: '최소 보장' },
   ],
 };
-
-export interface ChecklistItem {
-  text: string;
-  done: boolean;
-}
-
-export const SUBMISSION_CHECKLIST: ChecklistItem[] = [
-  { text: 'OMOP CDM 핵심 테이블·PK/FK를 반영한 ERD', done: true },
-  { text: '3축 피처의 문헌 근거와 1:1 매핑', done: true },
-  { text: '"고위험 × 교정 가능 공백" 개입 우선순위 로직', done: true },
-  { text: '실데이터 밀도·결측률·반복측정 본선 검증', done: false },
-  { text: '30/90일 모델 성능·SHAP 결과 연결', done: false },
-];

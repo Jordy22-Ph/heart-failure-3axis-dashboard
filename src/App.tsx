@@ -8,7 +8,7 @@ import {
   PATIENTS, READMISSION_BARS, SHAP_30D, SHAP_90D, SHAP_GLOBAL,
   MODEL_METRICS, AXIS_DEFINITIONS,
   AXIS_CONNECTION, INTEGRITY_NOTE, DOMAIN_TABLE, ERD_ENTITIES,
-  PRIORITY_CHECKS, ANALYSIS_ROUTES, SUBMISSION_CHECKLIST,
+  PRIORITY_CHECKS, ANALYSIS_ROUTES,
   type Tab, type GapType, type StatusType, type Period, type Patient, type ShapFeature,
   type RouteItem,
 } from './data';
@@ -136,14 +136,6 @@ function IconDatabase({ active }: { active?: boolean }) {
     </svg>
   );
 }
-function IconShieldCheck({ active }: { active?: boolean }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <path d="M10 2.5l6 2.2v4.6c0 4-2.6 6.9-6 8.2-3.4-1.3-6-4.2-6-8.2V4.7l6-2.2z" stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.7" strokeLinejoin="round" opacity={active ? 1 : 0.75} />
-      <path d="M7.3 10.2l1.9 1.9 3.5-3.9" stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 // ─── Shared micro-components ──────────────────────────────────────────────────
 
@@ -268,7 +260,6 @@ const NAV_ITEMS: { tab: Tab | null; icon: React.FC<{ active?: boolean }>; label:
   { tab: 'matrix', icon: IconScatter, label: '위험 매트릭스' },
   { tab: 'patients', icon: IconUsers, label: '환자 목록' },
   { tab: 'model', icon: IconBrain, label: 'AI 모델' },
-  { tab: 'submission', icon: IconShieldCheck, label: '제출 준비' },
 ];
 
 function Sidebar({ tab, setTab, expanded, onClose }: {
@@ -334,7 +325,6 @@ const TAB_LABELS: Record<Tab, { title: string; subtitle: string }> = {
   matrix: { title: '위험 × 교정 가능성 매트릭스', subtitle: '임상 위험 vs 교정 가능 공백 — 우상단이 최우선 개입 대상' },
   patients: { title: '개입 우선순위 목록', subtitle: '임상 위험 순 정렬 · 축별 공백으로 필터링' },
   model: { title: '재입원 예측 AI 모델', subtitle: '30일 / 90일 모델 성능 비교 · SHAP 변수 기여도' },
-  submission: { title: '제출 준비 상태', subtitle: '예선 제안서 완성도 체크리스트 · 보안 유의사항' },
 };
 
 function Header({ tab, period, setPeriod, onMenuOpen }: {
@@ -1301,57 +1291,6 @@ function ModelTab({ period }: { period: Period }) {
   );
 }
 
-// ─── Submission Tab ───────────────────────────────────────────────────────────
-
-function SubmissionTab() {
-  const doneCount = SUBMISSION_CHECKLIST.filter(c => c.done).length;
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-5">
-          <div className="flex items-center gap-4 mb-4">
-            <RingGauge value={doneCount} max={SUBMISSION_CHECKLIST.length} color={C.axis2}
-              label={`${doneCount}/${SUBMISSION_CHECKLIST.length}`} size={64} />
-            <div>
-              <SectionLabel>제출물 완성도</SectionLabel>
-              <div className="font-semibold" style={{ color: C.ink }}>체크리스트</div>
-            </div>
-          </div>
-          <div className="space-y-2">
-            {SUBMISSION_CHECKLIST.map(c => (
-              <div key={c.text} className="flex items-center gap-2.5 rounded-lg p-2.5 text-sm" style={{ background: C.bg }}>
-                <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold"
-                  style={c.done
-                    ? { color: '#fff', background: C.axis2 }
-                    : { color: C.gold, background: C.goldSoft, border: `1.5px solid ${C.gold}` }}>
-                  {c.done ? '✓' : '!'}
-                </span>
-                <span style={{ color: c.done ? C.ink : C.inkSoft }}>{c.text}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <div className="flex flex-col gap-4">
-          <div className="rounded-xl border p-5 leading-relaxed text-sm" style={{ borderColor: C.gold, background: C.goldSoft, color: C.ink }}>
-            <strong style={{ color: '#8A6A18' }}>보안 유의사항</strong>
-            <p className="mt-2">안심존 실데이터를 불러오지 않는 예선용 구조 설계입니다. 본선에서 검증된 결과로 확장합니다.</p>
-          </div>
-          <Card className="p-5">
-            <SectionLabel color={C.axis1}>핵심 주장</SectionLabel>
-            <ul className="space-y-2 mt-2 text-sm" style={{ color: C.inkSoft }}>
-              <li><strong style={{ color: C.ink }}>왜 3축</strong> — 위험만으론 "무엇을 바꿀지" 답 못함</li>
-              <li><strong style={{ color: C.ink }}>왜 OMOP</strong> — 표준 스키마라 기관 간 재현 가능</li>
-              <li><strong style={{ color: C.ink }}>왜 지금</strong> — 재입원·의료비 부담 급증 시점</li>
-            </ul>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Right Panel ──────────────────────────────────────────────────────────────
 
 function SummaryMetric({ label, value, color, progress }: {
@@ -1613,24 +1552,6 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
     );
   }
 
-  if (tab === 'submission') {
-    const doneCount = SUBMISSION_CHECKLIST.filter(c => c.done).length;
-    return (
-      <aside className="hidden xl:flex flex-col w-72 2xl:w-80 flex-shrink-0 border-l overflow-y-auto"
-        style={{ borderColor: C.line, background: '#FAFBFC' }}>
-        <div className="p-4 border-b" style={{ borderColor: C.line }}>
-          <SectionLabel color={C.axis2}>Summary</SectionLabel>
-          <div className="font-semibold" style={{ color: C.ink }}>제출 준비 요약</div>
-        </div>
-
-        <div className="p-4">
-          <RingGauge value={doneCount} max={SUBMISSION_CHECKLIST.length} color={C.axis2}
-            label={`${doneCount}/${SUBMISSION_CHECKLIST.length}`} size={96} />
-        </div>
-      </aside>
-    );
-  }
-
   // model tab
   return (
     <aside className="hidden xl:flex flex-col w-72 2xl:w-80 flex-shrink-0 border-l overflow-y-auto"
@@ -1744,7 +1665,6 @@ export default function App() {
               />
             )}
             {tab === 'model' && <ModelTab period={period} />}
-            {tab === 'submission' && <SubmissionTab />}
           </main>
 
           {/* Right panel */}
