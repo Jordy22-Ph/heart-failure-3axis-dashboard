@@ -11,3 +11,8 @@ logs/
 *.log
 .claude-replay.*
 .tmp-*
+
+# analysis/pipeline (Python)
+analysis/pipeline/.venv/
+analysis/pipeline/__pycache__/
+analysis/results/
