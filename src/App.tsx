@@ -6,8 +6,11 @@ import {
 import {
   C, GAP_COLOR, GAP_BG, STATUS_STYLE, AXIS_COLOR, AXIS_SOFT, AXIS_LABEL,
   PATIENTS, READMISSION_BARS, SHAP_30D, SHAP_90D, SHAP_GLOBAL,
-  PIPELINE_ROWS, MODEL_METRICS, AXIS_DEFINITIONS,
+  MODEL_METRICS, AXIS_DEFINITIONS,
+  EVAL_CRITERIA, AXIS_CONNECTION, INTEGRITY_NOTE, DOMAIN_TABLE, ERD_ENTITIES,
+  PRIORITY_CHECKS, ANALYSIS_ROUTES, SUBMISSION_CHECKLIST,
   type Tab, type GapType, type StatusType, type Period, type Patient, type ShapFeature,
+  type RouteItem,
 } from './data';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -48,15 +51,6 @@ function IconBrain({ active }: { active?: boolean }) {
       <path d="M10 3c-1.5 0-2.8.8-3.5 2C5 5.2 3.5 6.5 3.5 8.5c0 1.2.6 2.2 1.5 2.8V14a1 1 0 001 1h8a1 1 0 001-1v-2.7c.9-.6 1.5-1.6 1.5-2.8 0-2-1.5-3.3-3-3.5C12.8 3.8 11.5 3 10 3z"
         fill={active ? '#fff' : 'currentColor'} opacity={active ? 1 : 0.6} />
       <line x1="10" y1="8" x2="10" y2="14" stroke={active ? C.axis1 : 'transparent'} strokeWidth="1.2" />
-    </svg>
-  );
-}
-function IconSettings({ active }: { active?: boolean }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="2.5" stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.8" opacity={active ? 1 : 0.6} />
-      <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"
-        stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.8" strokeLinecap="round" opacity={active ? 1 : 0.6} />
     </svg>
   );
 }
@@ -130,6 +124,23 @@ function IconCare({ active }: { active?: boolean }) {
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
       <path d="M5 10.5l3 3 7-7" stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M10 17a7 7 0 100-14 7 7 0 000 14z" stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.5" opacity={0.75} />
+    </svg>
+  );
+}
+function IconDatabase({ active }: { active?: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <ellipse cx="10" cy="5" rx="6.5" ry="2.5" stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.7" opacity={active ? 1 : 0.75} />
+      <path d="M3.5 5v10c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5V5" stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.7" strokeLinecap="round" opacity={active ? 1 : 0.75} />
+      <path d="M3.5 10c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5" stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.5" opacity={0.6} />
+    </svg>
+  );
+}
+function IconShieldCheck({ active }: { active?: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path d="M10 2.5l6 2.2v4.6c0 4-2.6 6.9-6 8.2-3.4-1.3-6-4.2-6-8.2V4.7l6-2.2z" stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.7" strokeLinejoin="round" opacity={active ? 1 : 0.75} />
+      <path d="M7.3 10.2l1.9 1.9 3.5-3.9" stroke={active ? '#fff' : 'currentColor'} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -213,10 +224,11 @@ function Card({ children, className = '', style }: { children: React.ReactNode; 
 
 const NAV_ITEMS: { tab: Tab | null; icon: React.FC<{ active?: boolean }>; label: string }[] = [
   { tab: 'overview', icon: IconGrid, label: '개요' },
+  { tab: 'data', icon: IconDatabase, label: '데이터·ERD' },
   { tab: 'matrix', icon: IconScatter, label: '위험 매트릭스' },
   { tab: 'patients', icon: IconUsers, label: '환자 목록' },
   { tab: 'model', icon: IconBrain, label: 'AI 모델' },
-  { tab: null, icon: IconSettings, label: '설정' },
+  { tab: 'submission', icon: IconShieldCheck, label: '제출 준비' },
 ];
 
 function Sidebar({ tab, setTab, expanded, onClose }: {
@@ -269,21 +281,6 @@ function Sidebar({ tab, setTab, expanded, onClose }: {
             );
           })}
         </nav>
-
-        {/* Footer */}
-        <div className="px-3 pb-2">
-          <div className="flex items-center gap-2 px-2 py-2">
-            <div className="w-7 h-7 rounded-full bg-slate-600 flex-shrink-0 flex items-center justify-center text-xs text-white font-semibold">
-              연
-            </div>
-            {expanded && (
-              <div className="min-w-0">
-                <div className="text-xs text-slate-300 truncate">연구팀</div>
-                <div className="text-xs text-slate-500 truncate">계명대 동산의료원</div>
-              </div>
-            )}
-          </div>
-        </div>
       </aside>
     </>
   );
@@ -293,9 +290,11 @@ function Sidebar({ tab, setTab, expanded, onClose }: {
 
 const TAB_LABELS: Record<Tab, { title: string; subtitle: string }> = {
   overview: { title: '심부전 3축 개입 우선순위', subtitle: '임상 위험 → 영양 위험 → 관리 위험 → 통합 위험 → 교정 가능성 → 개입 우선순위' },
+  data: { title: '데이터 기반 · OMOP CDM ERD', subtitle: '안심존 반입 전 확인한 스키마 구조와 데이터 가용성별 조건부 분석 경로' },
   matrix: { title: '위험 × 교정 가능성 매트릭스', subtitle: '임상 위험 vs 교정 가능 공백 — 우상단이 최우선 개입 대상' },
   patients: { title: '개입 우선순위 목록', subtitle: '임상 위험 순 정렬 · 축별 공백으로 필터링' },
   model: { title: '재입원 예측 AI 모델', subtitle: '30일 / 90일 모델 성능 비교 · SHAP 변수 기여도' },
+  submission: { title: '제출 준비 상태', subtitle: '예선 제안서 완성도 체크리스트 · 보안 유의사항' },
 };
 
 function Header({ tab, period, setPeriod, onMenuOpen }: {
@@ -325,11 +324,6 @@ function Header({ tab, period, setPeriod, onMenuOpen }: {
               {p}
             </button>
           ))}
-        </div>
-        <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-mono-data"
-          style={{ background: C.axis1Soft, color: C.axis1 }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-          OMOP CDM v5.3
         </div>
       </div>
     </header>
@@ -554,6 +548,30 @@ function RiskFlowPanel() {
   );
 }
 
+function EvaluationCriteria() {
+  return (
+    <div>
+      <SectionLabel>예선 심사기준 대응</SectionLabel>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        {EVAL_CRITERIA.map(e => (
+          <Card key={e.code} className="p-3.5">
+            <div className="flex items-center justify-between">
+              <span className="font-mono-data text-xs tracking-wide" style={{ color: e.color }}>{e.code}</span>
+              <span className="font-mono-data text-xs" style={{ color: C.inkFaint }}>{e.weight}점</span>
+            </div>
+            <div className="font-semibold text-sm mt-2" style={{ color: C.ink }}>{e.name}</div>
+            <div className="text-xs mt-0.5" style={{ color: C.inkFaint }}>{e.official}</div>
+            <p className="text-xs mt-2 leading-relaxed" style={{ color: C.inkSoft }}>{e.answer}</p>
+            <div className="mt-2.5">
+              <ProgressBar value={e.weight} color={e.color} />
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function OverviewTab({ activeAxis, setActiveAxis, period }: {
   activeAxis: number; setActiveAxis: (n: number) => void; period: Period;
 }) {
@@ -574,6 +592,8 @@ function OverviewTab({ activeAxis, setActiveAxis, period }: {
 
   return (
     <div className="space-y-6">
+      <EvaluationCriteria />
+
       <RiskFlowPanel />
 
       {/* KPI Row */}
@@ -642,6 +662,136 @@ function OverviewTab({ activeAxis, setActiveAxis, period }: {
           })}
         </div>
       </div>
+
+      {/* Axis connection */}
+      <Card className="p-5">
+        <SectionLabel color={C.gold}>축 간 연결</SectionLabel>
+        <div className="font-semibold mb-1.5" style={{ color: C.ink }}>세 축은 독립적이지만, 교차 지점에서 개입 순위가 갈립니다</div>
+        <p className="text-sm leading-relaxed" style={{ color: C.inkSoft }}>{AXIS_CONNECTION}</p>
+      </Card>
+    </div>
+  );
+}
+
+// ─── Data · ERD Tab ───────────────────────────────────────────────────────────
+
+const ROUTE_GROUPS: { key: 'full' | 'partial' | 'base'; label: string; color: string; bg: string }[] = [
+  { key: 'full', label: '완전 분석', color: C.axis2, bg: C.axis2Soft },
+  { key: 'partial', label: '축소 분석', color: C.gold, bg: C.goldSoft },
+  { key: 'base', label: '최소 산출물', color: C.inkFaint, bg: C.lineSoft },
+];
+
+function RouteList({ items, color, bg }: { items: RouteItem[]; color: string; bg: string }) {
+  return (
+    <div className="space-y-2">
+      {items.map(r => (
+        <div key={r.id} className="flex items-start gap-3 rounded-lg border p-3" style={{ borderColor: C.lineSoft }}>
+          <span className="font-mono-data text-xs font-semibold flex-shrink-0 mt-0.5" style={{ color: C.axis1 }}>{r.id}</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium" style={{ color: C.ink }}>{r.title}</div>
+            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: C.inkSoft }}>{r.desc}</p>
+          </div>
+          <span className="flex-shrink-0"><Pill label={r.tag} color={color} bg={bg} /></span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DataTab() {
+  const [route, setRoute] = useState<'full' | 'partial' | 'base'>('full');
+  const activeGroup = ROUTE_GROUPS.find(g => g.key === route)!;
+
+  return (
+    <div className="space-y-6">
+      {/* Domain table */}
+      <Card className="overflow-hidden">
+        <div className="p-5 pb-3">
+          <SectionLabel>안심존 반입 전 확인한 기반</SectionLabel>
+          <div className="font-semibold" style={{ color: C.ink }}>OMOP CDM 도메인별 활용 계획</div>
+          <p className="text-xs mt-1" style={{ color: C.inkSoft }}>예선 단계는 Eunomia 합성 표본으로 구조·연결만 확인했으며, 값 충실도·반복 측정은 본선 검증 대상입니다.</p>
+        </div>
+        <div className="grid gap-3 px-5 py-2.5 text-xs font-mono-data uppercase tracking-wide border-b"
+          style={{ gridTemplateColumns: '1fr 1.6fr 1.4fr 96px', color: C.inkFaint, borderColor: C.line, background: C.bg }}>
+          <div>도메인</div><div>주요 테이블</div><div>활용</div><div>상태</div>
+        </div>
+        <div className="divide-y" style={{ borderColor: C.lineSoft }}>
+          {DOMAIN_TABLE.map(d => (
+            <div key={d.domain} className="grid gap-3 px-5 py-3 items-center text-sm" style={{ gridTemplateColumns: '1fr 1.6fr 1.4fr 96px' }}>
+              <div style={{ color: C.ink }}>{d.domain}</div>
+              <div className="font-mono-data text-xs" style={{ color: C.inkSoft }}>{d.tables}</div>
+              <div className="text-xs" style={{ color: C.inkSoft }}>{d.usage}</div>
+              <div>
+                <Pill label={d.status} color={d.status === '구조 확인' ? C.axis2 : C.gold} bg={d.status === '구조 확인' ? C.axis2Soft : C.goldSoft} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* ERD grid */}
+      <div>
+        <SectionLabel>핵심 ERD · 표준 OMOP CDM 연결</SectionLabel>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {ERD_ENTITIES.map(e => (
+            <div key={e.name}
+              className={`rounded-lg border p-3 ${e.core ? '' : 'border-dashed'}`}
+              style={{ borderColor: e.core ? '#CDDCFD' : C.gold, background: e.core ? C.axis1Soft : C.goldSoft }}>
+              <div className="font-mono-data text-xs font-semibold" style={{ color: e.core ? C.axis1 : '#9B682B' }}>{e.name}</div>
+              {e.fields.map(f => (
+                <div key={f} className="text-xs mt-1" style={{ color: C.inkSoft }}>{f}</div>
+              ))}
+              {!e.core && <div className="text-xs mt-1.5 font-medium" style={{ color: '#9B682B' }}>본선 재확인 대상</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Priority checks + integrity note */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="p-5">
+          <SectionLabel>본선 우선 확인 5가지</SectionLabel>
+          <div className="font-semibold mb-3" style={{ color: C.ink }}>안심존 반입 직후 점검 순서</div>
+          <ol className="space-y-2">
+            {PRIORITY_CHECKS.map((c, i) => (
+              <li key={c} className="flex items-start gap-2.5 text-sm" style={{ color: C.inkSoft }}>
+                <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-mono-data font-semibold text-white mt-0.5"
+                  style={{ background: C.axis1 }}>{i + 1}</span>
+                {c}
+              </li>
+            ))}
+          </ol>
+        </Card>
+
+        <div className="rounded-xl border p-5 leading-relaxed text-sm" style={{ borderColor: C.gold, background: C.goldSoft, color: C.ink }}>
+          <strong style={{ color: '#8A6A18' }}>정합성 원칙</strong>
+          <p className="mt-2">{INTEGRITY_NOTE}</p>
+        </div>
+      </div>
+
+      {/* Conditional analysis routes */}
+      <Card className="p-5">
+        <SectionLabel>데이터 가용성에 따른 조건부 분석 경로</SectionLabel>
+        <div className="font-semibold mb-3" style={{ color: C.ink }}>본선 실데이터 밀도에 맞춰 세 단계로 대응합니다</div>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {ROUTE_GROUPS.map(g => {
+            const isActive = route === g.key;
+            return (
+              <button key={g.key}
+                onClick={() => setRoute(g.key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+                style={{
+                  borderColor: isActive ? g.color : C.line,
+                  color: isActive ? g.color : C.inkSoft,
+                  background: isActive ? g.bg : 'white',
+                }}>
+                {g.label}
+              </button>
+            );
+          })}
+        </div>
+        <RouteList items={ANALYSIS_ROUTES[route]} color={activeGroup.color} bg={activeGroup.bg} />
+      </Card>
     </div>
   );
 }
@@ -1040,12 +1190,6 @@ function ModelTab({ period }: { period: Period }) {
   const [shapView, setShapView] = useState<'30일' | '90일' | '전체'>('전체');
   const shapData = shapView === '30일' ? SHAP_30D : shapView === '90일' ? SHAP_90D : null;
 
-  const PIPELINE_STATUS_STYLE = {
-    '완료': { color: C.axis2, bg: C.axis2Soft },
-    '예선 설계': { color: C.axis3, bg: C.axis3Soft },
-    '본선 예정': { color: C.inkFaint, bg: C.lineSoft },
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1144,27 +1288,55 @@ function ModelTab({ period }: { period: Period }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
 
-      {/* Pipeline */}
-      <div>
-        <SectionLabel>파이프라인 진행 상태</SectionLabel>
-        <Card className="overflow-hidden">
-          <div className="grid px-4 py-2.5 text-xs font-mono-data uppercase tracking-wide border-b"
-            style={{ gridTemplateColumns: '1.2fr 2fr 1fr', color: C.inkFaint, borderColor: C.line, background: C.bg }}>
-            <div>단계</div><div>내용</div><div>상태</div>
+// ─── Submission Tab ───────────────────────────────────────────────────────────
+
+function SubmissionTab() {
+  const doneCount = SUBMISSION_CHECKLIST.filter(c => c.done).length;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="p-5">
+          <div className="flex items-center justify-between mb-1">
+            <SectionLabel>제출물 완성도 체크리스트</SectionLabel>
+            <span className="font-mono-data text-xs" style={{ color: C.inkSoft }}>{doneCount}/{SUBMISSION_CHECKLIST.length} 완료</span>
           </div>
-          {PIPELINE_ROWS.map((r, i) => {
-            const s = PIPELINE_STATUS_STYLE[r.status];
-            return (
-              <div key={i} className="grid px-4 py-3 items-center border-b text-sm"
-                style={{ gridTemplateColumns: '1.2fr 2fr 1fr', borderColor: C.lineSoft }}>
-                <div className="font-medium" style={{ color: C.ink }}>{r.step}</div>
-                <div className="font-mono-data text-xs" style={{ color: C.inkSoft }}>{r.desc}</div>
-                <div><Pill label={r.status} color={s.color} bg={s.bg} /></div>
+          <div className="mb-4">
+            <ProgressBar value={(doneCount / SUBMISSION_CHECKLIST.length) * 100} color={C.axis2} />
+          </div>
+          <div className="space-y-2">
+            {SUBMISSION_CHECKLIST.map(c => (
+              <div key={c.text} className="flex items-start gap-2.5 rounded-lg p-2.5 text-sm" style={{ background: C.bg }}>
+                <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold mt-0.5"
+                  style={c.done
+                    ? { color: '#fff', background: C.axis2 }
+                    : { color: C.gold, background: C.goldSoft, border: `1.5px solid ${C.gold}` }}>
+                  {c.done ? '✓' : '!'}
+                </span>
+                <span style={{ color: c.done ? C.ink : C.inkSoft }}>{c.text}</span>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </Card>
+
+        <div className="flex flex-col gap-4">
+          <div className="rounded-xl border p-5 leading-relaxed text-sm" style={{ borderColor: C.gold, background: C.goldSoft, color: C.ink }}>
+            <strong style={{ color: '#8A6A18' }}>보안 유의사항</strong>
+            <p className="mt-2">이 대시보드는 안심존 실데이터를 불러오지 않습니다. 예선 단계에서는 구조 설계만 제시하며, 본선에 진출해 안심존 내에서 검증된 통계·모델 결과만 시각화로 확장합니다.</p>
+          </div>
+          <Card className="p-5">
+            <SectionLabel color={C.axis1}>핵심 주장 요약</SectionLabel>
+            <ul className="space-y-2.5 mt-2 text-sm" style={{ color: C.inkSoft }}>
+              <li><strong style={{ color: C.ink }}>왜 3축인가</strong> — 임상 위험만으로는 "무엇을 지금 바꿀 수 있는가"에 답하지 못합니다.</li>
+              <li><strong style={{ color: C.ink }}>왜 OMOP인가</strong> — 표준 스키마이므로 기관 간 재현·확장이 가능합니다.</li>
+              <li><strong style={{ color: C.ink }}>왜 지금인가</strong> — 재입원·의료비 부담이 급증하는 시점에 교정 가능한 개입 우선순위가 필요합니다.</li>
+            </ul>
+          </Card>
+        </div>
       </div>
     </div>
   );
@@ -1397,6 +1569,75 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
     );
   }
 
+  if (tab === 'data') {
+    const coreCount = ERD_ENTITIES.filter(e => e.core).length;
+    const pendingCount = ERD_ENTITIES.length - coreCount;
+    const confirmed = DOMAIN_TABLE.filter(d => d.status === '구조 확인').length;
+    const recheck = DOMAIN_TABLE.length - confirmed;
+
+    return (
+      <aside className="hidden xl:flex flex-col w-72 2xl:w-80 flex-shrink-0 border-l overflow-y-auto"
+        style={{ borderColor: C.line, background: '#FAFBFC' }}>
+        <div className="p-4 border-b" style={{ borderColor: C.line }}>
+          <SectionLabel color={C.axis1}>Summary</SectionLabel>
+          <div className="font-semibold" style={{ color: C.ink }}>데이터 기반 요약</div>
+          <p className="text-xs mt-1 leading-relaxed" style={{ color: C.inkSoft }}>
+            예선 단계에서 구조·연결을 확인한 OMOP CDM 엔티티와 도메인 상태입니다.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 p-4">
+          <SummaryMetric label="핵심 엔티티" value={coreCount} color={C.axis1} progress={(coreCount / ERD_ENTITIES.length) * 100} />
+          <SummaryMetric label="본선 재확인" value={pendingCount} color={C.gold} progress={(pendingCount / ERD_ENTITIES.length) * 100} />
+          <SummaryMetric label="구조 확인" value={confirmed} color={C.axis2} progress={(confirmed / DOMAIN_TABLE.length) * 100} />
+          <SummaryMetric label="값 재확인" value={recheck} color={C.axis3} progress={(recheck / DOMAIN_TABLE.length) * 100} />
+        </div>
+
+        <div className="px-4 pb-4">
+          <div className="text-xs font-medium mb-2" style={{ color: C.inkSoft }}>조건부 분석 경로</div>
+          <div className="space-y-2">
+            {ROUTE_GROUPS.map(g => (
+              <div key={g.key} className="flex items-center justify-between rounded-lg p-2.5 border" style={{ borderColor: C.lineSoft, background: 'white' }}>
+                <span className="text-xs font-medium" style={{ color: C.ink }}>{g.label}</span>
+                <Pill label={`${ANALYSIS_ROUTES[g.key].length}개 항목`} color={g.color} bg={g.bg} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  if (tab === 'submission') {
+    const doneCount = SUBMISSION_CHECKLIST.filter(c => c.done).length;
+    return (
+      <aside className="hidden xl:flex flex-col w-72 2xl:w-80 flex-shrink-0 border-l overflow-y-auto"
+        style={{ borderColor: C.line, background: '#FAFBFC' }}>
+        <div className="p-4 border-b" style={{ borderColor: C.line }}>
+          <SectionLabel color={C.axis2}>Summary</SectionLabel>
+          <div className="font-semibold" style={{ color: C.ink }}>제출 준비 요약</div>
+        </div>
+
+        <div className="p-4">
+          <SummaryMetric label="체크리스트 완료" value={`${doneCount}/${SUBMISSION_CHECKLIST.length}`} color={C.axis2}
+            progress={(doneCount / SUBMISSION_CHECKLIST.length) * 100} />
+        </div>
+
+        <div className="px-4 pb-4">
+          <div className="text-xs font-medium mb-2" style={{ color: C.inkSoft }}>심사기준 가중치</div>
+          <div className="space-y-2">
+            {EVAL_CRITERIA.map(e => (
+              <div key={e.code} className="flex items-center justify-between rounded-lg p-2.5 border" style={{ borderColor: C.lineSoft, background: 'white' }}>
+                <span className="text-xs font-medium" style={{ color: C.ink }}>{e.name}</span>
+                <span className="font-mono-data text-xs font-semibold" style={{ color: e.color }}>{e.weight}점</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
   // model tab
   return (
     <aside className="hidden xl:flex flex-col w-72 2xl:w-80 flex-shrink-0 border-l overflow-y-auto"
@@ -1425,28 +1666,6 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
         <div className="text-xs leading-relaxed p-3 rounded-lg" style={{ background: C.axis1Soft, color: C.inkSoft }}>
           <strong style={{ color: C.ink }}>기존 한계 (Kansagara 2011)</strong><br />
           임상·행정 변수 편중으로 c-통계량 0.60 한계. 본 연구는 영양·관리 축을 추가해 이를 극복하는 것이 목표.
-        </div>
-
-        {/* Pipeline summary */}
-        <div>
-          <div className="text-xs font-medium mb-2" style={{ color: C.inkSoft }}>파이프라인 상태</div>
-          {PIPELINE_ROWS.map((r, i) => {
-            const statusColors = {
-              '완료': C.axis2,
-              '예선 설계': C.axis3,
-              '본선 예정': C.inkFaint,
-            };
-            return (
-              <div key={i} className="flex items-center gap-2 py-1.5 border-b last:border-0 text-xs"
-                style={{ borderColor: C.lineSoft }}>
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: statusColors[r.status] }} />
-                <span className="flex-1 truncate" style={{ color: C.inkSoft }}>{r.step}</span>
-                <span className="font-mono-data text-xs" style={{ color: statusColors[r.status] }}>
-                  {r.status === '완료' ? '✓' : r.status === '예선 설계' ? '~' : '○'}
-                </span>
-              </div>
-            );
-          })}
         </div>
       </div>
     </aside>
@@ -1516,6 +1735,7 @@ export default function App() {
                 period={period}
               />
             )}
+            {tab === 'data' && <DataTab />}
             {tab === 'matrix' && (
               <MatrixTab
                 selected={selected}
@@ -1532,6 +1752,7 @@ export default function App() {
               />
             )}
             {tab === 'model' && <ModelTab period={period} />}
+            {tab === 'submission' && <SubmissionTab />}
           </main>
 
           {/* Right panel */}
