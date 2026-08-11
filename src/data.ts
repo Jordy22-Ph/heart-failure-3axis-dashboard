@@ -201,7 +201,7 @@ export const AXIS_DEFINITIONS = [
     title: '관측 대상',
     color: C.axis1,
     soft: C.axis1Soft,
-    sub: 'BNP/NT-proBNP·eGFR·전해질로 병태생리적 악화를 관측. 단기 교정 여지는 작음.',
+    sub: 'BNP·eGFR·전해질 기반 병태생리 관측',
     tags: ['measurement', 'condition_occurrence', 'BNP trajectory', 'eGFR slope'],
     metrics: [
       { key: 'BNP', unit: 'pg/mL', desc: '심부전 중증도 마커' },
@@ -215,7 +215,7 @@ export const AXIS_DEFINITIONS = [
     title: '개입 대상',
     color: C.axis2,
     soft: C.axis2Soft,
-    sub: 'CONUT·GNRI·저알부민혈증·심장악액질. 영양 중재로 교정 가능성이 높음.',
+    sub: 'CONUT·GNRI·저알부민혈증 — 영양 중재로 교정 가능',
     tags: ['CONUT', 'GNRI', '알부민 <3.5g/dL', 'Na <135mmol/L'],
     metrics: [
       { key: '알부민', unit: 'g/dL', desc: '영양 상태 지표' },
@@ -229,7 +229,7 @@ export const AXIS_DEFINITIONS = [
     title: '개입 대상',
     color: C.axis3,
     soft: C.axis3Soft,
-    sub: 'GDMT 처방·복약 순응도·진료 연속성. 관리 개입으로 교정 가능성이 높음.',
+    sub: 'GDMT 처방·복약 순응·진료 연속성 관리',
     tags: ['drug_era.GAP_DAYS', 'PDC/MPR', '진료연속성 지수', 'GDMT 4계열'],
     metrics: [
       { key: 'GDMT', unit: '/4계열', desc: '심부전 표준 치료 처방 완결도' },
@@ -241,49 +241,11 @@ export const AXIS_DEFINITIONS = [
 
 // ─── 제안서 대응 콘텐츠 (예선 아이디어 제안서 첨부용) ─────────────────────────
 
-export interface EvalCriterion {
-  code: string;
-  name: string;
-  weight: number;
-  official: string;
-  answer: string;
-  color: string;
-}
-
-// 예선 심사기준 원문(시의성/실현성/참신성/파급성)과 배점을 그대로 반영하고,
-// answer는 이 대시보드·아이디어가 각 기준에 어떻게 대응하는지를 설명한다.
-export const EVAL_CRITERIA: EvalCriterion[] = [
-  {
-    code: 'TIMELINESS', name: '시의성', weight: 20,
-    official: '아이디어 제안 배경 및 필요성',
-    answer: '고령화·의료비 급증과 30일 14.4%·90일 22.8% 재입원율을 근거로, 지금 다뤄야 할 문제임을 제시합니다.',
-    color: C.axis1,
-  },
-  {
-    code: 'FEASIBILITY', name: '실현성', weight: 30,
-    official: '제안 내용의 구현 및 실현·적용 가능성',
-    answer: '표준 OMOP CDM 스키마와 데이터 가용성별 조건부 분석 경로(A/B/C)로, 본선 실데이터 반입 이후의 구현 리스크를 낮췄습니다.',
-    color: C.axis2,
-  },
-  {
-    code: 'NOVELTY', name: '참신성', weight: 30,
-    official: '아이디어의 독창성·참신성',
-    answer: '단일 위험 점수 대신 임상·영양·관리 3축을 교차해, "누가 위험한가"가 아니라 "무엇을 지금 바꿀 수 있는가"로 질문을 바꿉니다.',
-    color: C.axis3,
-  },
-  {
-    code: 'IMPACT', name: '파급성', weight: 20,
-    official: '기대효과 및 파급력 · 아이디어의 향후 발전 가능성',
-    answer: '영양 상담·복약 순응 관리·외래 연계 등 퇴원관리 자원 배분 근거로 쓰일 수 있고, 표준 스키마 기반이라 다른 OMOP 참여기관으로 확장할 수 있습니다.',
-    color: C.gold,
-  },
-];
-
 export const AXIS_CONNECTION =
-  'eGFR 저하는 RAASi/MRA 감량으로 이어져 축3(치료 공백)을 만들 수 있습니다. 체질량 감소와 저알부민혈증은 단순 영양 부족이 아니라 개입이 필요한 임상 위험 신호입니다. 세 축을 독립적으로 관측하되, 교차하는 지점에서 개입 우선순위를 도출합니다.';
+  'eGFR 저하 → RAASi/MRA 감량 → 축3 치료 공백. 세 축은 독립 관측하되, 교차 지점에서 개입 순위를 정합니다.';
 
 export const INTEGRITY_NOTE =
-  '알부민·나트륨은 심부전 사망의 독립 예측인자로도 보고되어, 단순 영양 지표로만 다룰 수 없습니다. CONUT/GNRI의 구성요소를 중증도 공변량으로도 해석하고, 사망·복합결과와의 관계를 함께 검토합니다.';
+  '알부민·나트륨은 사망의 독립 예측인자이기도 해, 영양 지표만이 아니라 중증도 공변량으로도 함께 해석합니다.';
 
 export interface DomainRow {
   domain: string;
@@ -334,18 +296,18 @@ export interface RouteItem {
 
 export const ANALYSIS_ROUTES: { full: RouteItem[]; partial: RouteItem[]; base: RouteItem[] } = {
   full: [
-    { id: 'A1', title: 'EF 세분화 GDMT + BNP trajectory', desc: 'EF·BNP 반복측정이 있고 수치형으로 저장된 경우', tag: '축1 완전' },
-    { id: 'A2', title: 'CONUT + GNRI + 체중 추이', desc: '알부민·이뇨·림프구·체중·신장 확보 시', tag: '축2 완전' },
-    { id: 'A3', title: '연속성 4지표 균등 가중', desc: '외래·입원·처방·처방공백을 모두 구분할 수 있는 경우', tag: '축3 완전' },
+    { id: 'A1', title: 'EF 세분화 GDMT + BNP trajectory', desc: 'EF·BNP 반복측정 확보 시', tag: '축1 완전' },
+    { id: 'A2', title: 'CONUT + GNRI + 체중 추이', desc: '알부민·이뇨·림프구 확보 시', tag: '축2 완전' },
+    { id: 'A3', title: '연속성 4지표 균등 가중', desc: '외래·입원·처방 이력 구분 가능 시', tag: '축3 완전' },
   ],
   partial: [
-    { id: 'B1', title: '심부전 일반군 + 기본 검사값', desc: 'EF 부족 시 세분화 없이 코호트를 유지', tag: '조건부' },
-    { id: 'B2', title: '알부민 + Na 또는 GNRI', desc: 'CONUT 재료가 일부 부족한 경우', tag: '조건부' },
-    { id: 'B3', title: '처방공백 중심 관리지표', desc: '외래·입원 또는 방문 이력이 부족한 경우', tag: '조건부' },
+    { id: 'B1', title: '심부전 일반군 + 기본 검사값', desc: 'EF 없이 코호트 유지', tag: '조건부' },
+    { id: 'B2', title: '알부민 + Na 또는 GNRI', desc: 'CONUT 재료 일부 부족 시', tag: '조건부' },
+    { id: 'B3', title: '처방공백 중심 관리지표', desc: '방문 이력 부족 시', tag: '조건부' },
   ],
   base: [
-    { id: 'C1', title: '진단·약물·방문 프로파일', desc: '검사값이 희박해도 concept_ancestor·drug_era·방문으로 산출', tag: '최소 보장' },
-    { id: 'C2', title: '재입원 단독 1차 결과', desc: 'death가 없으면 복합결과 대신 30/90일 재입원율로 수렴', tag: '최소 보장' },
+    { id: 'C1', title: '진단·약물·방문 프로파일', desc: '검사값 희박해도 concept_ancestor로 산출', tag: '최소 보장' },
+    { id: 'C2', title: '재입원 단독 1차 결과', desc: 'death 없으면 재입원율로 수렴', tag: '최소 보장' },
   ],
 };
 

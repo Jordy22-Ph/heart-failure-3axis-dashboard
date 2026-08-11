@@ -7,7 +7,7 @@ import {
   C, GAP_COLOR, GAP_BG, STATUS_STYLE, AXIS_COLOR, AXIS_SOFT, AXIS_LABEL,
   PATIENTS, READMISSION_BARS, SHAP_30D, SHAP_90D, SHAP_GLOBAL,
   MODEL_METRICS, AXIS_DEFINITIONS,
-  EVAL_CRITERIA, AXIS_CONNECTION, INTEGRITY_NOTE, DOMAIN_TABLE, ERD_ENTITIES,
+  AXIS_CONNECTION, INTEGRITY_NOTE, DOMAIN_TABLE, ERD_ENTITIES,
   PRIORITY_CHECKS, ANALYSIS_ROUTES, SUBMISSION_CHECKLIST,
   type Tab, type GapType, type StatusType, type Period, type Patient, type ShapFeature,
   type RouteItem,
@@ -172,6 +172,46 @@ function ProgressBar({ value, color, bg = C.lineSoft, height = 6 }: {
   );
 }
 
+function Sparkline({ color, seed, height = 28 }: { color: string; seed: number; height?: number }) {
+  let s = seed * 7919 + 13;
+  const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  const points = Array.from({ length: 7 }, () => 25 + rand() * 60);
+  const w = 100;
+  const step = w / (points.length - 1);
+  const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${(i * step).toFixed(1)} ${(height - (p / 100) * height).toFixed(1)}`).join(' ');
+  return (
+    <svg width="100%" height={height} viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" className="block">
+      <path d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={0.5} />
+    </svg>
+  );
+}
+
+function RingGauge({ value, max = 100, color, size = 56, label }: {
+  value: number; max?: number; color: string; size?: number; label?: string;
+}) {
+  const stroke = Math.max(4, Math.round(size * 0.11));
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(1, max > 0 ? value / max : 0));
+  const offset = c * (1 - pct);
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={C.lineSoft} strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ transition: 'stroke-dashoffset .4s ease' }} />
+      </svg>
+      {label && (
+        <div className="absolute inset-0 flex items-center justify-center font-mono-data font-semibold text-center"
+          style={{ color, fontSize: Math.max(10, size * 0.2) }}>
+          {label}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TrendIndicator({ label, direction }: { label: string; direction: 'up' | 'down' | 'neutral' }) {
   const style = direction === 'up'
     ? { color: C.riskHigh, background: C.riskHighSoft }
@@ -213,7 +253,7 @@ function SectionLabel({ children, color }: { children: React.ReactNode; color?: 
 
 function Card({ children, className = '', style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
-    <div className={`bg-white rounded-lg border ${className}`}
+    <div className={`bg-white rounded-2xl border ${className}`}
       style={{ borderColor: C.line, ...style }}>
       {children}
     </div>
@@ -344,14 +384,14 @@ interface KPIData {
   accentColor?: string;
 }
 
-function KPICard({ data }: { data: KPIData }) {
+function KPICard({ data, seed }: { data: KPIData; seed: number }) {
   const Icon = data.icon;
   const color = data.accentColor ?? C.ink;
   return (
-    <Card className="p-4 flex min-h-[140px] flex-col gap-3 hover:shadow-md transition-shadow">
+    <Card className="p-5 flex min-h-[152px] flex-col gap-2.5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border"
-          style={{ color, background: `${color}12`, borderColor: `${color}26` }}>
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
+          style={{ color, background: `${color}14` }}>
           <Icon />
         </div>
         <RiskBadge level={data.risk} />
@@ -362,14 +402,12 @@ function KPICard({ data }: { data: KPIData }) {
           {data.value}
         </div>
       </div>
-      <div className="mt-auto space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs truncate" style={{ color: C.inkFaint }}>{data.note}</span>
-          {data.trendLabel && data.trendDirection && (
-            <TrendIndicator label={data.trendLabel} direction={data.trendDirection} />
-          )}
-        </div>
-        <ProgressBar value={data.progress} color={color} bg={C.lineSoft} />
+      <Sparkline color={color} seed={seed} height={22} />
+      <div className="mt-auto flex items-center justify-between gap-2">
+        <span className="text-xs truncate" style={{ color: C.inkFaint }}>{data.note}</span>
+        {data.trendLabel && data.trendDirection && (
+          <TrendIndicator label={data.trendLabel} direction={data.trendDirection} />
+        )}
       </div>
     </Card>
   );
@@ -499,9 +537,6 @@ function RiskFlowPanel() {
           <div className="text-lg font-semibold" style={{ color: C.ink }}>
             임상 위험에서 개입 우선순위까지 한 번에 연결
           </div>
-          <p className="mt-1 text-sm leading-relaxed" style={{ color: C.inkSoft }}>
-            병태생리 위험을 먼저 보고, 영양·관리 공백을 더해 통합 위험과 교정 가능성을 분리한 뒤 개입 순위를 정합니다.
-          </p>
         </div>
         <div className="flex items-center gap-2 rounded-lg border px-3 py-2" style={{ borderColor: C.line, background: C.bg }}>
           <RiskBadge level="높음" />
@@ -514,10 +549,10 @@ function RiskFlowPanel() {
           const Icon = step.icon;
           return (
             <div key={step.title} className="contents">
-              <div className="rounded-lg border p-3" style={{ borderColor: `${step.color}2E`, background: i < 3 ? '#FFFFFF' : step.bg }}>
+              <div className="rounded-xl border p-3" style={{ borderColor: `${step.color}2E`, background: i < 3 ? '#FFFFFF' : step.bg }}>
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border"
-                    style={{ color: step.color, background: step.bg, borderColor: `${step.color}30` }}>
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                    style={{ color: step.color, background: step.bg }}>
                     <Icon />
                   </div>
                   <RiskBadge level={step.badge} />
@@ -548,30 +583,6 @@ function RiskFlowPanel() {
   );
 }
 
-function EvaluationCriteria() {
-  return (
-    <div>
-      <SectionLabel>예선 심사기준 대응</SectionLabel>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        {EVAL_CRITERIA.map(e => (
-          <Card key={e.code} className="p-3.5">
-            <div className="flex items-center justify-between">
-              <span className="font-mono-data text-xs tracking-wide" style={{ color: e.color }}>{e.code}</span>
-              <span className="font-mono-data text-xs" style={{ color: C.inkFaint }}>{e.weight}점</span>
-            </div>
-            <div className="font-semibold text-sm mt-2" style={{ color: C.ink }}>{e.name}</div>
-            <div className="text-xs mt-0.5" style={{ color: C.inkFaint }}>{e.official}</div>
-            <p className="text-xs mt-2 leading-relaxed" style={{ color: C.inkSoft }}>{e.answer}</p>
-            <div className="mt-2.5">
-              <ProgressBar value={e.weight} color={e.color} />
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function OverviewTab({ activeAxis, setActiveAxis, period }: {
   activeAxis: number; setActiveAxis: (n: number) => void; period: Period;
 }) {
@@ -592,13 +603,11 @@ function OverviewTab({ activeAxis, setActiveAxis, period }: {
 
   return (
     <div className="space-y-6">
-      <EvaluationCriteria />
-
       <RiskFlowPanel />
 
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        {kpis.map((k, i) => <KPICard key={i} data={k} />)}
+        {kpis.map((k, i) => <KPICard key={i} data={k} seed={i + 1} />)}
       </div>
 
       {/* Chart + Axis cards */}
@@ -616,8 +625,8 @@ function OverviewTab({ activeAxis, setActiveAxis, period }: {
             </div>
           </div>
           <ReadmissionChart period={period} />
-          <p className="text-xs mt-2 flex items-start gap-1" style={{ color: C.inkFaint }}>
-            <IconInfo /><span>모집단·추적 기간에 따라 수치 차이가 발생함 — 단일 수치로 단정하지 않음</span>
+          <p className="text-xs mt-2 flex items-center gap-1" style={{ color: C.inkFaint }}>
+            <IconInfo /><span>모집단·추적 기간별 수치</span>
           </p>
         </Card>
 
@@ -685,7 +694,7 @@ function RouteList({ items, color, bg }: { items: RouteItem[]; color: string; bg
   return (
     <div className="space-y-2">
       {items.map(r => (
-        <div key={r.id} className="flex items-start gap-3 rounded-lg border p-3" style={{ borderColor: C.lineSoft }}>
+        <div key={r.id} className="flex items-start gap-3 rounded-xl border p-3" style={{ borderColor: C.lineSoft }}>
           <span className="font-mono-data text-xs font-semibold flex-shrink-0 mt-0.5" style={{ color: C.axis1 }}>{r.id}</span>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium" style={{ color: C.ink }}>{r.title}</div>
@@ -709,7 +718,6 @@ function DataTab() {
         <div className="p-5 pb-3">
           <SectionLabel>안심존 반입 전 확인한 기반</SectionLabel>
           <div className="font-semibold" style={{ color: C.ink }}>OMOP CDM 도메인별 활용 계획</div>
-          <p className="text-xs mt-1" style={{ color: C.inkSoft }}>예선 단계는 Eunomia 합성 표본으로 구조·연결만 확인했으며, 값 충실도·반복 측정은 본선 검증 대상입니다.</p>
         </div>
         <div className="grid gap-3 px-5 py-2.5 text-xs font-mono-data uppercase tracking-wide border-b"
           style={{ gridTemplateColumns: '1fr 1.6fr 1.4fr 96px', color: C.inkFaint, borderColor: C.line, background: C.bg }}>
@@ -735,13 +743,17 @@ function DataTab() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {ERD_ENTITIES.map(e => (
             <div key={e.name}
-              className={`rounded-lg border p-3 ${e.core ? '' : 'border-dashed'}`}
+              className={`rounded-xl border p-3 ${e.core ? '' : 'border-dashed'}`}
               style={{ borderColor: e.core ? '#CDDCFD' : C.gold, background: e.core ? C.axis1Soft : C.goldSoft }}>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full mb-2"
+                style={{ color: e.core ? C.axis1 : '#9B682B', background: e.core ? '#fff' : '#FFFBF3' }}>
+                <IconDatabase />
+              </div>
               <div className="font-mono-data text-xs font-semibold" style={{ color: e.core ? C.axis1 : '#9B682B' }}>{e.name}</div>
               {e.fields.map(f => (
                 <div key={f} className="text-xs mt-1" style={{ color: C.inkSoft }}>{f}</div>
               ))}
-              {!e.core && <div className="text-xs mt-1.5 font-medium" style={{ color: '#9B682B' }}>본선 재확인 대상</div>}
+              {!e.core && <div className="text-xs mt-1.5 font-medium" style={{ color: '#9B682B' }}>본선 재확인</div>}
             </div>
           ))}
         </div>
@@ -779,7 +791,7 @@ function DataTab() {
             return (
               <button key={g.key}
                 onClick={() => setRoute(g.key)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
                 style={{
                   borderColor: isActive ? g.color : C.line,
                   color: isActive ? g.color : C.inkSoft,
@@ -856,9 +868,7 @@ function MatrixTab({ selected, setSelected }: {
           <div>
             <SectionLabel>3.3절 · 통합 로직</SectionLabel>
             <div className="font-semibold" style={{ color: C.ink }}>위험 × 교정 가능성 매트릭스</div>
-            <p className="text-xs mt-0.5" style={{ color: C.inkSoft }}>
-              우상단 — 고위험·교정 가능 공백이 있는 환자 — 이 최우선 개입 대상 · 점을 클릭해 상세 확인
-            </p>
+            <p className="text-xs mt-0.5" style={{ color: C.inkSoft }}>우상단이 최우선 개입 대상 · 점 클릭 시 상세</p>
           </div>
           {selected && (
             <button onClick={() => setSelected(null)}
@@ -870,13 +880,19 @@ function MatrixTab({ selected, setSelected }: {
         </div>
 
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="rounded-xl border px-3 py-2 flex items-center gap-3" style={{ borderColor: `${C.riskHigh}25`, background: `${C.riskHigh}0F` }}>
+            <RingGauge value={priority} max={PATIENTS.length} color={C.riskHigh} size={40} />
+            <div>
+              <div className="text-xs" style={{ color: C.inkSoft }}>우선 개입</div>
+              <div className="font-mono-data text-lg font-semibold" style={{ color: C.riskHigh }}>{priority}</div>
+            </div>
+          </div>
           {[
             { label: '전체 환자', value: PATIENTS.length, color: C.axis1 },
-            { label: '우선 개입', value: priority, color: C.riskHigh },
             { label: '영양 공백', value: PATIENTS.filter(p => p.gap.includes('영양')).length, color: C.axis2 },
             { label: '관리 공백', value: PATIENTS.filter(p => p.gap.includes('관리')).length, color: C.axis3 },
           ].map(s => (
-            <div key={s.label} className="rounded-lg border px-3 py-2" style={{ borderColor: `${s.color}25`, background: `${s.color}0F` }}>
+            <div key={s.label} className="rounded-xl border px-3 py-2" style={{ borderColor: `${s.color}25`, background: `${s.color}0F` }}>
               <div className="text-xs" style={{ color: C.inkSoft }}>{s.label}</div>
               <div className="font-mono-data text-lg font-semibold" style={{ color: s.color }}>{s.value}</div>
             </div>
@@ -998,7 +1014,7 @@ function PatientsTab({ filter, setFilter, expandedId, setExpandedId, sortedPatie
           return (
             <button key={f}
               onClick={() => { setFilter(f); setExpandedId(null); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
               style={{
                 borderColor: isActive ? c : C.line,
                 color: isActive ? c : C.inkSoft,
@@ -1076,9 +1092,9 @@ function PatientsTab({ filter, setFilter, expandedId, setExpandedId, sortedPatie
         </div>
       </Card>
 
-      <p className="text-xs flex items-start gap-1" style={{ color: C.inkFaint }}>
+      <p className="text-xs flex items-center gap-1" style={{ color: C.inkFaint }}>
         <IconInfo />
-        <span>환자 행을 클릭하면 축별(임상·영양·관리) 상세 지표가 펼쳐집니다. 표의 값은 OMOP CDM 구조 기반 예시이며 실데이터가 아닙니다.</span>
+        <span>행 클릭 시 축별 상세 지표 · 예시 값 (실데이터 아님)</span>
       </p>
     </div>
   );
@@ -1152,7 +1168,7 @@ function GlobalShapSection() {
       <div>
         <SectionLabel>전역 변수 중요도 · 핵심 가설 검증</SectionLabel>
         <ShapChart data={sorted} title="통합 모델 · 전체 SHAP 중요도 순위"
-          subtitle="30일·90일 구분 없이 전체 피처를 하나의 순위로 — 축1에 편중되지 않는지가 관건" />
+          subtitle="축1 편중 여부가 핵심 관건" />
       </div>
 
       {/* Stacked axis contribution */}
@@ -1177,10 +1193,7 @@ function GlobalShapSection() {
       </Card>
 
       <div className="rounded-xl border p-4 text-sm leading-relaxed" style={{ borderColor: C.gold, background: C.goldSoft, color: C.ink }}>
-        <strong>검증 대상 가설</strong> — 기존 재입원 모델이 임상·행정 변수에 편중되어 c-통계량 0.60에 그친다는 지적(Keenan 2008·Kansagara 2011)을 근거로,
-        위처럼 축2(영양)·축3(관리) 변수가 전체 중요도의 상당 부분을 차지한다면,
-        <em> "영양·관리 공백이 임상 지표와 독립적으로 재입원 위험을 설명한다"</em>는 전제가 실증적으로 뒷받침된다.
-        본선 실데이터로 확정한다.
+        <strong>검증 가설</strong> — 축2·축3 기여도가 크다면 "영양·관리 공백이 임상 지표와 독립적으로 재입원을 설명한다"는 전제가 뒷받침됨. 본선 실데이터로 확정.
       </div>
     </div>
   );
@@ -1199,9 +1212,7 @@ function ModelTab({ period }: { period: Period }) {
           style={{ borderColor: C.inkFaint, background: 'repeating-linear-gradient(135deg, #FAFAFB, #FAFAFB 10px, #F3F4F6 10px, #F3F4F6 20px)' }}>
           <div className="text-2xl font-mono-data" style={{ color: C.inkFaint }}>?</div>
           <div className="font-semibold" style={{ color: C.inkSoft }}>모델 학습은 본선 실데이터로 진행 예정</div>
-          <p className="text-sm max-w-md mx-auto" style={{ color: C.inkFaint }}>
-            아래는 결과가 채워질 형식을 보여주는 예시입니다. 수치는 실제 학습 결과가 아닙니다.
-          </p>
+          <p className="text-sm max-w-md mx-auto" style={{ color: C.inkFaint }}>아래 수치는 예시 형식이며 실제 학습 결과가 아닙니다</p>
         </div>
       </div>
 
@@ -1242,8 +1253,8 @@ function ModelTab({ period }: { period: Period }) {
             </Card>
           ))}
         </div>
-        <p className="text-xs mt-2 flex items-start gap-1" style={{ color: C.inkFaint }}>
-          <IconInfo /><span>두 모델은 별도로 학습하며, 판별력·보정력을 나란히 비교해 예측 시점에 따른 성능 차이를 확인합니다.</span>
+        <p className="text-xs mt-2 flex items-center gap-1" style={{ color: C.inkFaint }}>
+          <IconInfo /><span>두 모델을 별도 학습해 성능 비교</span>
         </p>
       </div>
 
@@ -1269,12 +1280,12 @@ function ModelTab({ period }: { period: Period }) {
             <ShapChart
               data={SHAP_30D}
               title="30일 모델"
-              subtitle="단기 재입원은 병태생리적 악화(축1) 기여가 큼"
+              subtitle="축1(병태생리) 기여 큼"
             />
             <ShapChart
               data={SHAP_90D}
               title="90일 모델"
-              subtitle="장기 재입원은 관리·영양 공백(축2·3) 기여가 커짐"
+              subtitle="축2·3(교정 공백) 기여 큼"
             />
           </div>
         )}
@@ -1282,9 +1293,7 @@ function ModelTab({ period }: { period: Period }) {
         {shapView !== '전체' && (
           <div className="rounded-xl border p-4 text-sm leading-relaxed mt-3"
             style={{ borderColor: C.gold, background: C.goldSoft, color: C.ink }}>
-            <strong>가설</strong> — 30일 모델은 BNP·eGFR 등 축1 피처가 상위권을 차지하고,
-            90일 모델은 진료연속성·PDC 등 축3(관리)·축2(영양) 피처의 기여도가 상대적으로 커진다.
-            맞다면 "단기는 병태생리, 장기는 교정 가능한 공백이 더 결정적"이라는 전제를 데이터로 뒷받침하는 근거가 된다.
+            <strong>가설</strong> — 30일은 축1(병태생리), 90일은 축2·3(교정 가능 공백)이 더 크게 기여.
           </div>
         )}
       </div>
@@ -1301,17 +1310,18 @@ function SubmissionTab() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-5">
-          <div className="flex items-center justify-between mb-1">
-            <SectionLabel>제출물 완성도 체크리스트</SectionLabel>
-            <span className="font-mono-data text-xs" style={{ color: C.inkSoft }}>{doneCount}/{SUBMISSION_CHECKLIST.length} 완료</span>
-          </div>
-          <div className="mb-4">
-            <ProgressBar value={(doneCount / SUBMISSION_CHECKLIST.length) * 100} color={C.axis2} />
+          <div className="flex items-center gap-4 mb-4">
+            <RingGauge value={doneCount} max={SUBMISSION_CHECKLIST.length} color={C.axis2}
+              label={`${doneCount}/${SUBMISSION_CHECKLIST.length}`} size={64} />
+            <div>
+              <SectionLabel>제출물 완성도</SectionLabel>
+              <div className="font-semibold" style={{ color: C.ink }}>체크리스트</div>
+            </div>
           </div>
           <div className="space-y-2">
             {SUBMISSION_CHECKLIST.map(c => (
-              <div key={c.text} className="flex items-start gap-2.5 rounded-lg p-2.5 text-sm" style={{ background: C.bg }}>
-                <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold mt-0.5"
+              <div key={c.text} className="flex items-center gap-2.5 rounded-lg p-2.5 text-sm" style={{ background: C.bg }}>
+                <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold"
                   style={c.done
                     ? { color: '#fff', background: C.axis2 }
                     : { color: C.gold, background: C.goldSoft, border: `1.5px solid ${C.gold}` }}>
@@ -1326,14 +1336,14 @@ function SubmissionTab() {
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border p-5 leading-relaxed text-sm" style={{ borderColor: C.gold, background: C.goldSoft, color: C.ink }}>
             <strong style={{ color: '#8A6A18' }}>보안 유의사항</strong>
-            <p className="mt-2">이 대시보드는 안심존 실데이터를 불러오지 않습니다. 예선 단계에서는 구조 설계만 제시하며, 본선에 진출해 안심존 내에서 검증된 통계·모델 결과만 시각화로 확장합니다.</p>
+            <p className="mt-2">안심존 실데이터를 불러오지 않는 예선용 구조 설계입니다. 본선에서 검증된 결과로 확장합니다.</p>
           </div>
           <Card className="p-5">
-            <SectionLabel color={C.axis1}>핵심 주장 요약</SectionLabel>
-            <ul className="space-y-2.5 mt-2 text-sm" style={{ color: C.inkSoft }}>
-              <li><strong style={{ color: C.ink }}>왜 3축인가</strong> — 임상 위험만으로는 "무엇을 지금 바꿀 수 있는가"에 답하지 못합니다.</li>
-              <li><strong style={{ color: C.ink }}>왜 OMOP인가</strong> — 표준 스키마이므로 기관 간 재현·확장이 가능합니다.</li>
-              <li><strong style={{ color: C.ink }}>왜 지금인가</strong> — 재입원·의료비 부담이 급증하는 시점에 교정 가능한 개입 우선순위가 필요합니다.</li>
+            <SectionLabel color={C.axis1}>핵심 주장</SectionLabel>
+            <ul className="space-y-2 mt-2 text-sm" style={{ color: C.inkSoft }}>
+              <li><strong style={{ color: C.ink }}>왜 3축</strong> — 위험만으론 "무엇을 바꿀지" 답 못함</li>
+              <li><strong style={{ color: C.ink }}>왜 OMOP</strong> — 표준 스키마라 기관 간 재현 가능</li>
+              <li><strong style={{ color: C.ink }}>왜 지금</strong> — 재입원·의료비 부담 급증 시점</li>
             </ul>
           </Card>
         </div>
@@ -1348,7 +1358,7 @@ function SummaryMetric({ label, value, color, progress }: {
   label: string; value: string | number; color: string; progress?: number;
 }) {
   return (
-    <div className="rounded-lg border p-3" style={{ borderColor: `${color}30`, background: 'white' }}>
+    <div className="rounded-xl border p-3" style={{ borderColor: `${color}30`, background: 'white' }}>
       <div className="flex items-baseline justify-between gap-2">
         <div className="text-xs" style={{ color: C.inkSoft }}>{label}</div>
         <div className="font-mono-data text-lg font-semibold" style={{ color }}>{value}</div>
@@ -1376,10 +1386,8 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
         style={{ borderColor: C.line, background: '#FAFBFC' }}>
         <div className="p-4 border-b" style={{ borderColor: C.line }}>
           <SectionLabel color={C.axis1}>Summary</SectionLabel>
-          <div className="font-semibold" style={{ color: C.ink }}>코호트 요약 패널</div>
-          <p className="text-xs mt-1 leading-relaxed" style={{ color: C.inkSoft }}>
-            현재 합성 코호트 {patients.length}명 기준 · 선택 축과 공백 분포를 함께 표시합니다.
-          </p>
+          <div className="font-semibold" style={{ color: C.ink }}>코호트 요약</div>
+          <p className="text-xs mt-1" style={{ color: C.inkSoft }}>합성 코호트 {patients.length}명 기준</p>
         </div>
 
         <div className="grid grid-cols-2 gap-2 p-4 pb-2">
@@ -1396,7 +1404,7 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
               <div className="font-semibold" style={{ color: C.ink }}>{ax.key}</div>
               <p className="text-xs mt-1 leading-relaxed" style={{ color: C.inkSoft }}>{ax.sub}</p>
             </div>
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-sm font-mono-data font-semibold text-white"
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-sm font-mono-data font-semibold text-white"
               style={{ background: ax.color }}>
               {ax.n}
             </div>
@@ -1405,7 +1413,7 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
 
         <div className="p-4 space-y-2">
           {ax.metrics.map(m => (
-            <div key={m.key} className="rounded-lg p-3 border" style={{ borderColor: `${ax.color}30`, background: ax.soft }}>
+            <div key={m.key} className="rounded-xl p-3 border" style={{ borderColor: `${ax.color}30`, background: ax.soft }}>
               <div className="flex items-center justify-between mb-1">
                 <span className="font-mono-data text-xs font-semibold" style={{ color: ax.color }}>{m.key}</span>
                 <span className="text-xs font-mono-data" style={{ color: C.inkFaint }}>{m.unit}</span>
@@ -1453,14 +1461,14 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
             <div className="p-4 space-y-2">
               {/* Risk indicators */}
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg p-2.5 text-center" style={{ background: C.axis1Soft }}>
+                <div className="rounded-xl p-2.5 text-center" style={{ background: C.axis1Soft }}>
                   <div className="font-mono-data text-xl font-semibold" style={{ color: C.axis1 }}>{selected.clinicalRisk}</div>
                   <div className="text-xs mt-0.5" style={{ color: C.inkSoft }}>임상 위험</div>
                   <div className="mt-2">
                     <ProgressBar value={selected.clinicalRisk} color={C.axis1} bg="rgba(255,255,255,0.75)" />
                   </div>
                 </div>
-                <div className="rounded-lg p-2.5 text-center" style={{ background: C.axis2Soft }}>
+                <div className="rounded-xl p-2.5 text-center" style={{ background: C.axis2Soft }}>
                   <div className="font-mono-data text-xl font-semibold" style={{ color: C.axis2 }}>{selected.correctableGap}</div>
                   <div className="text-xs mt-0.5" style={{ color: C.inkSoft }}>교정 가능 공백</div>
                   <div className="mt-2">
@@ -1477,7 +1485,7 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
               ].map(({ n, label, status }) => {
                 const s = STATUS_STYLE[status as StatusType];
                 return (
-                  <div key={n} className="flex items-center justify-between p-2.5 rounded-lg border"
+                  <div key={n} className="flex items-center justify-between p-2.5 rounded-xl border"
                     style={{ borderColor: C.lineSoft, background: 'white' }}>
                     <div className="flex items-center gap-2">
                       <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-mono-data font-semibold text-white"
@@ -1492,7 +1500,7 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
               })}
 
               {/* Recommended action */}
-              <div className="rounded-lg p-3" style={{ background: C.goldSoft, border: `1px solid ${C.gold}40` }}>
+              <div className="rounded-xl p-3" style={{ background: C.goldSoft, border: `1px solid ${C.gold}40` }}>
                 <div className="text-xs font-medium mb-1" style={{ color: C.gold }}>권고 개입</div>
                 <div className="text-sm" style={{ color: C.ink }}>{selected.action}</div>
               </div>
@@ -1534,11 +1542,11 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
         <div className="p-4 space-y-4">
           {/* Key stats */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg p-2.5 text-center border" style={{ borderColor: C.riskHigh + '40', background: C.riskHighSoft }}>
+            <div className="rounded-xl p-2.5 text-center border" style={{ borderColor: C.riskHigh + '40', background: C.riskHighSoft }}>
               <div className="font-mono-data text-xl font-semibold" style={{ color: C.riskHigh }}>{highRisk}</div>
               <div className="text-xs mt-0.5" style={{ color: C.inkSoft }}>고위험 (임상≥65)</div>
             </div>
-            <div className="rounded-lg p-2.5 text-center border" style={{ borderColor: C.gold + '40', background: C.goldSoft }}>
+            <div className="rounded-xl p-2.5 text-center border" style={{ borderColor: C.gold + '40', background: C.goldSoft }}>
               <div className="font-mono-data text-xl font-semibold" style={{ color: C.gold }}>{correctable}</div>
               <div className="text-xs mt-0.5" style={{ color: C.inkSoft }}>우선 개입 대상</div>
             </div>
@@ -1581,9 +1589,6 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
         <div className="p-4 border-b" style={{ borderColor: C.line }}>
           <SectionLabel color={C.axis1}>Summary</SectionLabel>
           <div className="font-semibold" style={{ color: C.ink }}>데이터 기반 요약</div>
-          <p className="text-xs mt-1 leading-relaxed" style={{ color: C.inkSoft }}>
-            예선 단계에서 구조·연결을 확인한 OMOP CDM 엔티티와 도메인 상태입니다.
-          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-2 p-4">
@@ -1597,7 +1602,7 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
           <div className="text-xs font-medium mb-2" style={{ color: C.inkSoft }}>조건부 분석 경로</div>
           <div className="space-y-2">
             {ROUTE_GROUPS.map(g => (
-              <div key={g.key} className="flex items-center justify-between rounded-lg p-2.5 border" style={{ borderColor: C.lineSoft, background: 'white' }}>
+              <div key={g.key} className="flex items-center justify-between rounded-xl p-2.5 border" style={{ borderColor: C.lineSoft, background: 'white' }}>
                 <span className="text-xs font-medium" style={{ color: C.ink }}>{g.label}</span>
                 <Pill label={`${ANALYSIS_ROUTES[g.key].length}개 항목`} color={g.color} bg={g.bg} />
               </div>
@@ -1619,20 +1624,8 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
         </div>
 
         <div className="p-4">
-          <SummaryMetric label="체크리스트 완료" value={`${doneCount}/${SUBMISSION_CHECKLIST.length}`} color={C.axis2}
-            progress={(doneCount / SUBMISSION_CHECKLIST.length) * 100} />
-        </div>
-
-        <div className="px-4 pb-4">
-          <div className="text-xs font-medium mb-2" style={{ color: C.inkSoft }}>심사기준 가중치</div>
-          <div className="space-y-2">
-            {EVAL_CRITERIA.map(e => (
-              <div key={e.code} className="flex items-center justify-between rounded-lg p-2.5 border" style={{ borderColor: C.lineSoft, background: 'white' }}>
-                <span className="text-xs font-medium" style={{ color: C.ink }}>{e.name}</span>
-                <span className="font-mono-data text-xs font-semibold" style={{ color: e.color }}>{e.weight}점</span>
-              </div>
-            ))}
-          </div>
+          <RingGauge value={doneCount} max={SUBMISSION_CHECKLIST.length} color={C.axis2}
+            label={`${doneCount}/${SUBMISSION_CHECKLIST.length}`} size={96} />
         </div>
       </aside>
     );
@@ -1653,7 +1646,7 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
           { label: '30일 모델 AUROC', value: 0.78, color: C.axis1, desc: '단기 예측력' },
           { label: '90일 모델 AUROC', value: 0.74, color: C.axis3, desc: '장기 예측력' },
         ].map(({ label, value, color, desc }) => (
-          <div key={label} className="border rounded-lg p-3" style={{ borderColor: C.lineSoft, background: 'white' }}>
+          <div key={label} className="border rounded-xl p-3" style={{ borderColor: C.lineSoft, background: 'white' }}>
             <div className="text-xs mb-1" style={{ color: C.inkSoft }}>{label}</div>
             <div className="font-mono-data text-2xl font-semibold" style={{ color }}>{value}</div>
             <div className="mt-1.5 h-1.5 rounded-full" style={{ background: C.lineSoft }}>
@@ -1663,9 +1656,8 @@ function RightPanel({ tab, activeAxis, selected, filter, patients }: {
           </div>
         ))}
 
-        <div className="text-xs leading-relaxed p-3 rounded-lg" style={{ background: C.axis1Soft, color: C.inkSoft }}>
-          <strong style={{ color: C.ink }}>기존 한계 (Kansagara 2011)</strong><br />
-          임상·행정 변수 편중으로 c-통계량 0.60 한계. 본 연구는 영양·관리 축을 추가해 이를 극복하는 것이 목표.
+        <div className="text-xs leading-relaxed p-3 rounded-xl" style={{ background: C.axis1Soft, color: C.inkSoft }}>
+          <strong style={{ color: C.ink }}>기존 한계</strong> — 임상·행정 변수 편중으로 c-통계량 0.60. 영양·관리 축 추가로 극복 목표.
         </div>
       </div>
     </aside>
